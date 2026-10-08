@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cuestionario de Registro Escolar</title>
+</head>
+<body>
+
+    <form id="formulario">
+        <label>Nombre y Apellido:</label>
+        <input type="text" id="nombre" placeholder="Ingresa tu nombre completo" required>
+        <br><br>
+
+        <label>Ingrese su DNI:</label>
+        <input type="text" id="dni" placeholder="Sin puntos ni espacios" required>
+        <br><br>
+
+        <label>Seleccione su Año:</label>
+        <select id="curso" required>
+            <option value="">-- Seleccionar Curso --</option>
+            <option value="4° Año">4° Año</option>
+            <option value="5° Año">5° Año</option>
+            <option value="6° Año">6° Año</option>
+        </select>
+        <br><br>
+
+        <b>Seleccione su Especialidad:</b><br>
+        <input type="radio" name="especialidad" value="Programación" id="prog" required>
+        <label for="prog">Programación / Informática</label><br>
+        <input type="radio" name="especialidad" value="Electromecánica" id="electro">
+        <label for="electro">Electromecánica</label><br>
+        <input type="radio" name="especialidad" value="Construcciones" id="const">
+        <label for="const">Construcciones</label>
+        <br><br>
+
+        <b>¿En qué turno cursas las materias?</b><br>
+        <input type="radio" name="turno" value="Mañana" id="manana" required>
+        <label for="manana">Mañana</label><br>
+        <input type="radio" name="turno" value="Tarde" id="tarde">
+        <label for="tarde">Tarde</label>
+        <br><br>
+
+        <button type="submit">Enviar Respuestas</button>
+    </form>
+
+    <br><hr><br>
+
+    <!-- Botón abajo del formulario con nuevo nombre -->
+    <button type="button" onclick="alternarTabla()">Ver Registros Guardados</button>
+
+    <!-- La tabla empieza oculta hasta presionar el botón -->
+    <div id="seccion-tabla" style="display: none;">
+        <br>
+        <h3>Registros Extraídos de la Base de Datos</h3>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>DNI</th>
+                    <th>Curso</th>
+                    <th>Especialidad</th>
+                    <th>Turno</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpoTabla"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const form = document.getElementById('formulario');
+        const cuerpoTabla = document.getElementById('cuerpoTabla');
+        const seccionTabla = document.getElementById('seccion-tabla');
+
+        function alternarTabla() {
+            if (seccionTabla.style.display === 'none' || seccionTabla.style.display === '') {
+                seccionTabla.style.display = 'block';
+            } else {
+                seccionTabla.style.display = 'none';
+            }
+        }
+
+        async function cargarUsuarios() {
+            try {
+                const res = await fetch('/api/usuarios');
+                const alumnos = await res.json();
+
+                cuerpoTabla.innerHTML = '';
+                if (alumnos.length === 0) return;
+
+                alumnos.forEach(alumno => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td>${alumno.id}</td>
+                        <td>${alumno.nombre}</td>
+                        <td>${alumno.dni}</td>
+                        <td>${alumno.curso}</td>
+                        <td>${alumno.especialidad}</td>
+                        <td>${alumno.turno}</td>
+                    `;
+                    cuerpoTabla.appendChild(fila);
+                });
+            } catch (error) {
+                console.error("Error al extraer registros:", error);
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nombre = document.getElementById('nombre').value;
+            const dni = document.getElementById('dni').value;
+            const curso = document.getElementById('curso').value;
+            const especialidad = document.querySelector('input[name="especialidad"]:checked').value;
+            const turno = document.querySelector('input[name="turno"]:checked').value;
+
+            await fetch('/api/agregar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, dni, curso, especialidad, turno })
+            });
+
+            form.reset();
+            cargarUsuarios();
+            seccionTabla.style.display = 'block';
+        });
+
+        cargarUsuarios();
+    </script>
+
+</body>
+</html>
